@@ -4,16 +4,16 @@
 
 - docente
 - alumno
-- ciclo_academico
-- calendario (Aqui se almacenan todas las fechas del año)
-- curso
-- syllabus
-- seccion
-- horario
+- ciclo_academico (Aqui se almacenan los ciclos academicos, indica la fecha de inicio y fin de cada ciclo academico)
+- calendario (Aqui se almacenan todas las fechas del año, agregando una columna que describa si es un dia feriado o un dia laboral)
+- curso (cada fila es un curso en un ciclo academico, por ejemplo: CS1100, MA2001, SI101, GE907)
+- syllabus (cada fila es un syllabus de un curso en un ciclo academico, pero por mientras en una columna se agrega los temas del syllabus)
+- seccion (el nombre de la seccion puede ser A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z)
+- horario (puedes haber tipos como teoría, practica, laboratorio)
 - docente_seccion
 - alumno_seccion
-- sesion_clase
-- asistencia
+- sesion_clase (es la tabla donde se va a programar todas las sesiones de clase del ciclo academico presente, hay una columna que dice si ya se realizó dicha sesion de clase o esta pendiente, hay una columna que menciona el tema de la sesion de clase que es registrado por el docente)
+- asistencia (es la tabla donde se va a registrar la asistencia de los alumnos y el docente en cada sesion de clase)
 
 ## 2. Estas son las relaciones que existen:
 

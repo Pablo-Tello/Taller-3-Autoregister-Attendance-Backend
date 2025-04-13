@@ -16,6 +16,11 @@ from dotenv import load_dotenv
 
 # Cargar variables de entorno desde .env
 load_dotenv()
+# print(os.environ.get('DATABASE_NAME'))
+# print(os.environ.get('DATABASE_USER'))
+# print(os.environ.get('DATABASE_PASSWORD'))
+# print(os.environ.get('DATABASE_HOST'))
+# print(os.environ.get('DATABASE_PORT'))
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -45,6 +50,10 @@ INSTALLED_APPS = [
 
     # Third party apps
     'rest_framework',
+    'rest_framework.authtoken',
+    'drf_yasg',
+    # 'coreschema',
+    # 'coreapi',
 
     # Local apps
     'src.module.academico.apps.AcademicoConfig',
@@ -89,10 +98,10 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.environ.get('DATABASE_NAME', 'django_db'),
-        'USER': os.environ.get('DATABASE_USER', 'root'),
+        'NAME': os.environ.get('DATABASE_NAME', 'taller3_autoregister_attendances'),
+        'USER': os.environ.get('DATABASE_USER', 'admin'),
         'PASSWORD': os.environ.get('DATABASE_PASSWORD', ''),
-        'HOST': os.environ.get('DATABASE_HOST', 'localhost'),
+        'HOST': os.environ.get('DATABASE_HOST', 'taller-3-autoregister-attendance.cq9swgukaphx.us-east-1.rds.amazonaws.com'),
         'PORT': os.environ.get('DATABASE_PORT', '3306'),
         'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
@@ -123,13 +132,13 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'es-pe'
+LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'America/Lima'
+TIME_ZONE = 'UTC'
 
 USE_I18N = True
 
-USE_TZ = True
+USE_TZ = False
 
 
 # Static files (CSS, JavaScript, Images)

@@ -9,9 +9,9 @@ class AlumnoSeccionSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class AlumnoSeccionDetalleSerializer(serializers.ModelSerializer):
-    alumno = AlumnoSerializer(read_only=True)
-    seccion = SeccionSerializer(read_only=True)
-    
+    str_idAlumno = AlumnoSerializer(read_only=True)
+    int_idSeccion = SeccionSerializer(read_only=True)
+
     class Meta:
         model = AlumnoSeccion
         fields = '__all__'
@@ -22,9 +22,9 @@ class DocenteSeccionSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class DocenteSeccionDetalleSerializer(serializers.ModelSerializer):
-    docente = DocenteSerializer(read_only=True)
-    seccion = SeccionSerializer(read_only=True)
-    
+    str_idDocente = DocenteSerializer(read_only=True)
+    int_idSeccion = SeccionSerializer(read_only=True)
+
     class Meta:
         model = DocenteSeccion
         fields = '__all__'

@@ -21,9 +21,16 @@ class CalendarioViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = Calendario.objects.all()
-        ciclo_id = self.request.query_params.get('ciclo_id', None)
-        if ciclo_id is not None:
-            queryset = queryset.filter(ciclo_academico_id=ciclo_id)
+        fecha = self.request.query_params.get('fecha', None)
+        tipo_dia = self.request.query_params.get('tipo_dia', None)
+        laborable = self.request.query_params.get('laborable', None)
+
+        if fecha is not None:
+            queryset = queryset.filter(dt_fecha=fecha)
+        if tipo_dia is not None:
+            queryset = queryset.filter(str_tipo_dia=tipo_dia)
+        if laborable is not None:
+            queryset = queryset.filter(bool_laborable=laborable.lower() == 'true')
         return queryset
 
 class CursoViewSet(viewsets.ModelViewSet):

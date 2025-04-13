@@ -4,3 +4,4 @@ mysqlclient
 python-dotenv
 coreapi
 PyYAML
+drf-yasg

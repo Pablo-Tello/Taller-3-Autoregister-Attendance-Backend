@@ -2,16 +2,16 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 
 class UserManager(BaseUserManager):
-    def create_user(self, email, password=None, **extra_fields):
-        if not email:
+    def create_user(self, str_email, password=None, **extra_fields):
+        if not str_email:
             raise ValueError('El Email es obligatorio')
-        email = self.normalize_email(email)
-        user = self.model(email=email, **extra_fields)
+        str_email = self.normalize_email(str_email)
+        user = self.model(str_email=str_email, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, email, password=None, **extra_fields):
+    def create_superuser(self, str_email, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
         extra_fields.setdefault('is_active', True)
@@ -21,7 +21,7 @@ class UserManager(BaseUserManager):
         if extra_fields.get('is_superuser') is not True:
             raise ValueError('Superuser debe tener is_superuser=True.')
 
-        return self.create_user(email, password, **extra_fields)
+        return self.create_user(str_email, password, **extra_fields)
 
 class User(AbstractUser):
     int_idUser = models.AutoField(primary_key=True)

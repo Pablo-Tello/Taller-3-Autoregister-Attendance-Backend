@@ -9,9 +9,9 @@ class AsistenciaSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class AsistenciaDetalleSerializer(serializers.ModelSerializer):
-    alumno_seccion = AlumnoSeccionSerializer(read_only=True)
-    sesion_clase = SesionClaseSerializer(read_only=True)
-    
+    int_idAlumnoSeccion = AlumnoSeccionSerializer(read_only=True)
+    int_idSesionClase = SesionClaseSerializer(read_only=True)
+
     class Meta:
         model = Asistencia
         fields = '__all__'

@@ -25,20 +25,21 @@ class Calendario(models.Model):
     ]
 
     int_idCalendario = models.AutoField(primary_key=True)
-    str_idCicloAcademico = models.ForeignKey(CicloAcademico, on_delete=models.CASCADE, related_name='calendarios', to_field='str_idCicloAcademico')
     dt_fecha = models.DateField()
     str_tipo_dia = models.CharField(max_length=1, choices=TIPO_DIA, default='L')
     str_descripcion = models.CharField(max_length=200, blank=True, null=True)
     bool_laborable = models.BooleanField(default=True)
 
     def __str__(self):
-        return f"{self.dt_fecha} - {self.get_str_tipo_dia_display()} - {self.str_idCicloAcademico}"
+        return f"{self.dt_fecha} - {self.get_str_tipo_dia_display()}"
 
     class Meta:
         db_table = 'calendario'
         verbose_name = 'Calendario'
         verbose_name_plural = 'Calendarios'
-        unique_together = ('ciclo_academico', 'dt_fecha')
+        constraints = [
+            models.UniqueConstraint(fields=['dt_fecha'], name='unique_fecha_calendario')
+        ]
 
 class Curso(models.Model):
     str_idCurso = models.CharField(primary_key=True, max_length=20)  # Ejemplo: "CS1100", "MA2001"
@@ -127,8 +128,10 @@ class SesionClase(models.Model):
     int_idSesionClase = models.AutoField(primary_key=True)
     int_idHorario = models.ForeignKey(Horario, on_delete=models.CASCADE, related_name='sesiones', to_field='int_idHorario')
     str_idCicloAcademico = models.ForeignKey(CicloAcademico, on_delete=models.CASCADE, to_field='str_idCicloAcademico')
+    int_idCalendario = models.ForeignKey(Calendario, on_delete=models.CASCADE, related_name='sesiones', to_field='int_idCalendario')
     dt_fecha = models.DateField()
     str_estado = models.CharField(max_length=1, choices=ESTADOS, default='P')
+    str_tema = models.CharField(max_length=200, blank=True, null=True)
     str_observacion = models.TextField(blank=True, null=True)
     bool_activo = models.BooleanField(default=True)
 
