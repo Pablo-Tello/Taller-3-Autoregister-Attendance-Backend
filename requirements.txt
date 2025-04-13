@@ -1,3 +1,6 @@
 Django
 djangorestframework
 mysqlclient
+python-dotenv
+coreapi
+PyYAML
