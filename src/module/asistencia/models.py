@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 from src.module.academico.models import SesionClase
 from src.module.inscripciones.models import AlumnoSeccion
 from src.module.usuarios.models import Docente
@@ -43,3 +44,29 @@ class Asistencia(models.Model):
                 name='check_tipo_asistencia'
             )
         ]
+
+
+class CodigoQR(models.Model):
+    int_idCodigoQR = models.AutoField(primary_key=True)
+    int_idSesionClase = models.ForeignKey(SesionClase, on_delete=models.CASCADE, related_name='codigos_qr', to_field='int_idSesionClase')
+    str_idDocente = models.ForeignKey(Docente, on_delete=models.CASCADE, related_name='codigos_qr', to_field='str_idDocente')
+    str_codigo = models.CharField(max_length=255, unique=True)
+    dt_fecha_creacion = models.DateTimeField(auto_now_add=True)
+    dt_fecha_expiracion = models.DateTimeField(null=True, blank=True)
+    bool_activo = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"Código QR {self.int_idCodigoQR} - Sesión {self.int_idSesionClase}"
+
+    def is_valid(self):
+        """Verifica si el código QR está activo y no ha expirado"""
+        if not self.bool_activo:
+            return False
+        if self.dt_fecha_expiracion and timezone.now() > self.dt_fecha_expiracion:
+            return False
+        return True
+
+    class Meta:
+        db_table = 'codigo_qr'
+        verbose_name = 'Código QR'
+        verbose_name_plural = 'Códigos QR'

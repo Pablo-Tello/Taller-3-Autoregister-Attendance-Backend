@@ -5,3 +5,5 @@ python-dotenv
 coreapi
 PyYAML
 drf-yasg
+qrcode
+pillow

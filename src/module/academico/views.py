@@ -1,4 +1,7 @@
 from rest_framework import viewsets
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+
 from .models import CicloAcademico, Calendario, Curso, Syllabus, Seccion, SesionClase, Horario
 from .serializers import (
     CicloAcademicoSerializer,
@@ -89,6 +92,28 @@ class HorarioViewSet(viewsets.ModelViewSet):
 class SesionClaseViewSet(viewsets.ModelViewSet):
     queryset = SesionClase.objects.all()
     serializer_class = SesionClaseSerializer
+    # pagination_class = None  # Desactivar paginación para este ViewSet
+
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['dt_fecha', 'int_idHorario', 'str_idCicloAcademico'],
+            properties={
+                'dt_fecha': openapi.Schema(type=openapi.TYPE_STRING, format='date', description='Fecha de la sesión'),
+                'str_estado': openapi.Schema(type=openapi.TYPE_STRING, description='Estado de la sesión (P: Pendiente, R: Realizada, C: Cancelada)', default='P'),
+                'str_tema': openapi.Schema(type=openapi.TYPE_STRING, description='Tema de la sesión'),
+                'str_observacion': openapi.Schema(type=openapi.TYPE_STRING, description='Observaciones'),
+                'bool_activo': openapi.Schema(type=openapi.TYPE_BOOLEAN, description='Indica si la sesión está activa', default=True),
+                'int_idHorario': openapi.Schema(type=openapi.TYPE_INTEGER, description='ID del horario'),
+                'str_idCicloAcademico': openapi.Schema(type=openapi.TYPE_STRING, description='ID del ciclo académico'),
+                # int_idCalendario se determina automáticamente a partir de dt_fecha
+            },
+        ),
+        operation_description='Crea una nueva sesión de clase. El campo int_idCalendario se determina automáticamente a partir de dt_fecha.',
+        operation_summary='Crear sesión de clase',
+    )
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
 
     def get_queryset(self):
         queryset = SesionClase.objects.all()
