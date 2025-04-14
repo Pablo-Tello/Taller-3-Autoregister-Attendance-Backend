@@ -10,10 +10,22 @@ class LoginSerializer(serializers.Serializer):
     password = serializers.CharField(required=True, write_only=True)
 
     def validate(self, data):
+        # Verificar si el usuario existe
+        try:
+            user = User.objects.get(str_email=data['str_email'])
+        except User.DoesNotExist:
+            raise serializers.ValidationError("No existe un usuario con este email")
+
+        # Intentar autenticar
         user = authenticate(username=data['str_email'], password=data['password'])
-        if user and user.is_active:
-            return {'user': user}
-        raise serializers.ValidationError("Credenciales incorrectas o usuario inactivo")
+
+        if not user:
+            raise serializers.ValidationError("Contraseña incorrecta")
+
+        if not user.is_active:
+            raise serializers.ValidationError("Usuario inactivo")
+
+        return {'user': user}
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
