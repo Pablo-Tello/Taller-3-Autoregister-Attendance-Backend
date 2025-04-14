@@ -35,7 +35,7 @@ SECRET_KEY = 'django-insecure-pubjm$@fb*+j9%cv=t4ad(n6fg48tbl^l73#_b9&m3pqsfy-6a
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['3.87.235.218']
 
 
 # Application definition

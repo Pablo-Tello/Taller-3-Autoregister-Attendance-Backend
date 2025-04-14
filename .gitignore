@@ -1,3 +1,5 @@
 .env
 env/
 envTaller3/
+__pycache__/
+**/__pycache__/

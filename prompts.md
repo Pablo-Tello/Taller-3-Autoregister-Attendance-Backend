@@ -7,9 +7,3 @@ datetime: dt_
 3. En la tabla calendario, quiero agregar todas las fechas del año, agregando una columna que describa si es un dia feriado o un dia laboral. Estas fecha se van a usar en la tabla sesión de clase.
 4. En la tabla sesion de clase, es la tabla donde se va a programar todas las sesiones de clase del ciclo academico presente. Donde una columna debe decir si ya se realizó dicha sesion de clase o esta pendiente.
 5. Quiero crear un tabla horario, que va a tener una clave foranea de la tabla docente_seccion. Y la tabla sesion_clase va a usar los horarios semanales para programar todas las sesiones de clase del presente ciclo academico.
-
-
-
-Django SuperUser:
-email: admin@example.com
-password: test1 
