@@ -12,6 +12,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+from src.module.usuarios.permissions import IsDocente, IsAlumno, IsDocenteOrAlumno
 
 try:
     import qrcode
@@ -35,6 +36,7 @@ from .serializers import (
 
 class AsistenciaViewSet(viewsets.ModelViewSet):
     queryset = Asistencia.objects.all()
+    permission_classes = [IsDocenteOrAlumno]
 
     def get_serializer_class(self):
         if self.action == 'retrieve':
@@ -63,6 +65,13 @@ class AsistenciaViewSet(viewsets.ModelViewSet):
 class CodigoQRViewSet(viewsets.ModelViewSet):
     queryset = CodigoQR.objects.all()
     permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        if self.action == 'generar' or self.action == 'create':
+            self.permission_classes = [IsDocente]
+        elif self.action == 'verificar':
+            self.permission_classes = [IsAlumno]
+        return super().get_permissions()
 
     def get_serializer_class(self):
         if self.action == 'create':

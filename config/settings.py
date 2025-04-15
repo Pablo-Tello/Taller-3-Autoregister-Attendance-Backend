@@ -35,7 +35,7 @@ SECRET_KEY = 'django-insecure-pubjm$@fb*+j9%cv=t4ad(n6fg48tbl^l73#_b9&m3pqsfy-6a
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['3.87.235.218']
+ALLOWED_HOSTS = ['3.87.235.218', '*']
 
 
 # Application definition
@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'drf_yasg',
+    'corsheaders',
     # 'coreschema',
     # 'coreapi',
 
@@ -65,6 +66,8 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',  # CORS middleware - add this before CommonMiddleware
+    'src.middleware.CorsMiddleware',  # Nuestro middleware personalizado para CORS
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -157,6 +160,7 @@ AUTH_USER_MODEL = 'usuarios.User'
 # Django REST Framework settings
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication',
     ],
@@ -166,3 +170,49 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
 }
+
+# CORS settings
+CORS_ALLOW_ALL_ORIGINS = True  # Temporalmente permitir todos los orígenes para depuración
+
+# List of origins that are allowed to make cross-site HTTP requests
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:5173',  # Your frontend development server
+    'http://127.0.0.1:5173',
+    # Add any other origins that need access (e.g., production frontend URL)
+]
+
+# Allow credentials (cookies, authorization headers)
+CORS_ALLOW_CREDENTIALS = True
+
+# Allow these HTTP methods
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+
+# Allow these headers in requests
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+
+# Allow these headers in responses
+CORS_EXPOSE_HEADERS = [
+    'content-type',
+    'content-length',
+    'content-disposition',
+]
+
+# Allow preflight requests to be cached for longer
+CORS_PREFLIGHT_MAX_AGE = 86400  # 24 hours

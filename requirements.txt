@@ -8,3 +8,4 @@ drf-yasg
 qrcode
 pillow
 pyngrok
+django-cors-headers

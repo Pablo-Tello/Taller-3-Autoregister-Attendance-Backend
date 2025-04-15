@@ -1,6 +1,7 @@
 from rest_framework import viewsets
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+from src.module.usuarios.permissions import IsDocenteOrAlumno
 
 from .models import CicloAcademico, Calendario, Curso, Syllabus, Seccion, SesionClase, Horario
 from .serializers import (
@@ -17,10 +18,12 @@ from .serializers import (
 class CicloAcademicoViewSet(viewsets.ModelViewSet):
     queryset = CicloAcademico.objects.all()
     serializer_class = CicloAcademicoSerializer
+    permission_classes = [IsDocenteOrAlumno]
 
 class CalendarioViewSet(viewsets.ModelViewSet):
     queryset = Calendario.objects.all()
     serializer_class = CalendarioSerializer
+    permission_classes = [IsDocenteOrAlumno]
 
     def get_queryset(self):
         queryset = Calendario.objects.all()
@@ -39,10 +42,12 @@ class CalendarioViewSet(viewsets.ModelViewSet):
 class CursoViewSet(viewsets.ModelViewSet):
     queryset = Curso.objects.all()
     serializer_class = CursoSerializer
+    permission_classes = [IsDocenteOrAlumno]
 
 class SyllabusViewSet(viewsets.ModelViewSet):
     queryset = Syllabus.objects.all()
     serializer_class = SyllabusSerializer
+    permission_classes = [IsDocenteOrAlumno]
 
     def get_queryset(self):
         queryset = Syllabus.objects.all()
@@ -58,6 +63,7 @@ class SyllabusViewSet(viewsets.ModelViewSet):
 
 class SeccionViewSet(viewsets.ModelViewSet):
     queryset = Seccion.objects.all()
+    permission_classes = [IsDocenteOrAlumno]
 
     def get_serializer_class(self):
         if self.action == 'retrieve':
@@ -79,6 +85,7 @@ class SeccionViewSet(viewsets.ModelViewSet):
 class HorarioViewSet(viewsets.ModelViewSet):
     queryset = Horario.objects.all()
     serializer_class = HorarioSerializer
+    permission_classes = [IsDocenteOrAlumno]
 
     def get_queryset(self):
         queryset = Horario.objects.all()
@@ -92,6 +99,7 @@ class HorarioViewSet(viewsets.ModelViewSet):
 class SesionClaseViewSet(viewsets.ModelViewSet):
     queryset = SesionClase.objects.all()
     serializer_class = SesionClaseSerializer
+    permission_classes = [IsDocenteOrAlumno]
     # pagination_class = None  # Desactivar paginación para este ViewSet
 
     @swagger_auto_schema(

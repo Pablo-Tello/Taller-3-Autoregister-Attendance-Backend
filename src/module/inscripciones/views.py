@@ -6,9 +6,11 @@ from .serializers import (
     DocenteSeccionSerializer,
     DocenteSeccionDetalleSerializer
 )
+from src.module.usuarios.permissions import IsDocenteOrAlumno
 
 class AlumnoSeccionViewSet(viewsets.ModelViewSet):
     queryset = AlumnoSeccion.objects.all()
+    permission_classes = [IsDocenteOrAlumno]
 
     def get_serializer_class(self):
         if self.action == 'retrieve':
@@ -32,6 +34,7 @@ class AlumnoSeccionViewSet(viewsets.ModelViewSet):
 
 class DocenteSeccionViewSet(viewsets.ModelViewSet):
     queryset = DocenteSeccion.objects.all()
+    permission_classes = [IsDocenteOrAlumno]
 
     def get_serializer_class(self):
         if self.action == 'retrieve':
