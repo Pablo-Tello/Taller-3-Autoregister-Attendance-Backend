@@ -1,0 +1,277 @@
+###############################################################################
+# API Requests para el Sistema de Registro de Asistencia
+# Este archivo puede ser utilizado con la extensión "REST Client" de VS Code
+###############################################################################
+
+@baseUrl = http://localhost:8000
+# Si estás usando ngrok, reemplaza la URL base con la URL proporcionada por ngrok
+# @baseUrl = https://tu-url-de-ngrok.ngrok.io
+
+###############################################################################
+# AUTENTICACIÓN
+###############################################################################
+
+### Login como Docente - Obtener token de autenticación
+# @name docenteLogin
+POST {{baseUrl}}/api/usuarios/login/
+Content-Type: application/json
+
+{
+    "str_email": "docente@ejemplo.com",
+    "password": "contraseña_docente"
+}
+
+### Guardar el token del docente
+@docenteToken = {{docenteLogin.response.body.token}}
+@isDocente = {{docenteLogin.response.body.is_docente}}
+
+### Login como Alumno - Obtener token de autenticación
+# @name alumnoLogin
+POST {{baseUrl}}/api/usuarios/login/
+Content-Type: application/json
+
+{
+    "str_email": "alumno@ejemplo.com",
+    "password": "contraseña_alumno"
+}
+
+### Guardar el token del alumno
+@alumnoToken = {{alumnoLogin.response.body.token}}
+@isAlumno = {{alumnoLogin.response.body.is_alumno}}
+
+### Logout - Cerrar sesión (funciona con cualquier token)
+POST {{baseUrl}}/api/usuarios/logout/
+Authorization: Token {{docenteToken}}
+
+###############################################################################
+# USUARIOS
+###############################################################################
+
+### Listar todos los usuarios (con token de docente)
+GET {{baseUrl}}/api/usuarios/users/
+Authorization: Token {{docenteToken}}
+
+### Obtener un usuario específico por ID (con token de docente)
+GET {{baseUrl}}/api/usuarios/users/1/
+Authorization: Token {{docenteToken}}
+
+### Crear un nuevo usuario (con token de docente)
+POST {{baseUrl}}/api/usuarios/users/
+Content-Type: application/json
+Authorization: Token {{docenteToken}}
+
+{
+    "str_email": "nuevo_usuario@ejemplo.com",
+    "password": "contraseña_segura",
+    "first_name": "Nombre",
+    "last_name": "Apellido",
+    "bool_activo": true
+}
+
+### Listar todos los docentes
+GET {{baseUrl}}/api/usuarios/docentes/
+Authorization: Token {{authToken}}
+
+### Crear un nuevo docente (crea automáticamente un usuario)
+POST {{baseUrl}}/api/usuarios/docentes/
+Content-Type: application/json
+Authorization: Token {{authToken}}
+
+{
+    "str_nombres": "Nombre Docente",
+    "str_apellidos": "Apellido Docente",
+    "str_especialidad": "Ingeniería de Software",
+    "bool_activo": true,
+    "str_email": "docente@ejemplo.com",
+    "password": "contraseña_segura"
+}
+
+### Listar todos los alumnos
+GET {{baseUrl}}/api/usuarios/alumnos/
+Authorization: Token {{authToken}}
+
+### Crear un nuevo alumno (crea automáticamente un usuario)
+POST {{baseUrl}}/api/usuarios/alumnos/
+Content-Type: application/json
+Authorization: Token {{authToken}}
+
+{
+    "str_nombres": "Nombre Alumno",
+    "str_apellidos": "Apellido Alumno",
+    "dt_fecha_nacimiento": "2000-01-01",
+    "bool_activo": true,
+    "str_email": "alumno@ejemplo.com",
+    "password": "contraseña_segura"
+}
+
+###############################################################################
+# ACADÉMICO
+###############################################################################
+
+### Listar todos los ciclos académicos (accesible para docentes y alumnos)
+GET {{baseUrl}}/api/academico/ciclos/
+Authorization: Token {{docenteToken}}
+
+### Listar ciclos académicos con token de alumno (también funciona)
+GET {{baseUrl}}/api/academico/ciclos/
+Authorization: Token {{alumnoToken}}
+
+### Listar todos los cursos (accesible para docentes y alumnos)
+GET {{baseUrl}}/api/academico/cursos/
+Authorization: Token {{docenteToken}}
+
+### Listar todas las secciones (accesible para docentes y alumnos)
+GET {{baseUrl}}/api/academico/secciones/
+Authorization: Token {{alumnoToken}}
+
+### Listar secciones de un curso específico (accesible para docentes y alumnos)
+GET {{baseUrl}}/api/academico/secciones/?curso_id=1
+Authorization: Token {{docenteToken}}
+
+### Listar sesiones de clase (accesible para docentes y alumnos)
+GET {{baseUrl}}/api/academico/sesiones/
+Authorization: Token {{alumnoToken}}
+
+### Listar sesiones de clase de un horario específico (accesible para docentes y alumnos)
+GET {{baseUrl}}/api/academico/sesiones/?horario_id=1
+Authorization: Token {{docenteToken}}
+
+###############################################################################
+# INSCRIPCIONES
+###############################################################################
+
+### Listar todas las inscripciones de alumnos a secciones (accesible para docentes y alumnos)
+GET {{baseUrl}}/api/inscripciones/alumnos-secciones/
+Authorization: Token {{docenteToken}}
+
+### Listar inscripciones de un alumno específico (accesible para docentes y alumnos)
+GET {{baseUrl}}/api/inscripciones/alumnos-secciones/?alumno_id=A001
+Authorization: Token {{alumnoToken}}
+
+### Listar asignaciones de docentes a secciones (accesible para docentes y alumnos)
+GET {{baseUrl}}/api/inscripciones/docentes-secciones/
+Authorization: Token {{docenteToken}}
+
+### Listar asignaciones de un docente específico (accesible para docentes y alumnos)
+GET {{baseUrl}}/api/inscripciones/docentes-secciones/?docente_id=D001
+Authorization: Token {{alumnoToken}}
+
+###############################################################################
+# ASISTENCIA
+###############################################################################
+
+### Listar todas las asistencias (accesible para docentes y alumnos)
+# Puedes usar tanto el token de docente como el de alumno
+GET {{baseUrl}}/api/asistencia/asistencias/
+Authorization: Token {{docenteToken}}
+
+### Listar asistencias con token de alumno (también funciona)
+GET {{baseUrl}}/api/asistencia/asistencias/
+Authorization: Token {{alumnoToken}}
+
+### Listar asistencias de una sesión específica (accesible para docentes y alumnos)
+GET {{baseUrl}}/api/asistencia/asistencias/?sesion_clase_id=1
+Authorization: Token {{docenteToken}}
+
+### Listar códigos QR (accesible para docentes y alumnos)
+GET {{baseUrl}}/api/asistencia/codigos-qr/
+Authorization: Token {{docenteToken}}
+
+### Generar un nuevo código QR (SOLO PARA DOCENTES)
+# Esta solicitud fallará si se usa un token de alumno
+### Generar
+POST {{baseUrl}}/api/asistencia/codigos-qr/generar/
+Content-Type: application/json
+Authorization: Token {{docenteToken}}
+
+{
+    "int_idSesionClase": 1,
+    "str_idDocente": "D001",
+    "formato": "base64"
+}
+
+### Verificar un código QR y registrar asistencia (SOLO PARA ALUMNOS)
+# Esta solicitud fallará si se usa un token de docente
+POST {{baseUrl}}/api/asistencia/codigos-qr/verificar/
+Content-Type: application/json
+Authorization: Token {{alumnoToken}}
+
+{
+    "str_codigo": "codigo-qr-generado",
+    "str_idAlumno": "A001"
+}
+
+###############################################################################
+# EJEMPLOS DE FLUJO COMPLETO CON AUTENTICACIÓN POR ROL
+###############################################################################
+
+### 1. Docente inicia sesión
+# @name docenteLogin
+POST {{baseUrl}}/api/usuarios/login/
+Content-Type: application/json
+
+{
+    "str_email": "docente@ejemplo.com",
+    "password": "contraseña_docente"
+}
+
+@docenteToken = {{docenteLogin.response.body.token}}
+@isDocente = {{docenteLogin.response.body.is_docente}}
+
+### 2. Docente genera código QR para una sesión (SOLO FUNCIONA CON TOKEN DE DOCENTE)
+# @name generarQR
+POST {{baseUrl}}/api/asistencia/codigos-qr/generar/
+Content-Type: application/json
+Authorization: Token {{docenteToken}}
+
+{
+    "int_idSesionClase": 1,
+    "str_idDocente": "D001",
+    "formato": "base64"
+}
+
+@codigoQR = {{generarQR.response.body.codigo}}
+
+### 3. Alumno inicia sesión
+# @name alumnoLogin
+POST {{baseUrl}}/api/usuarios/login/
+Content-Type: application/json
+
+{
+    "str_email": "alumno@ejemplo.com",
+    "password": "contraseña_alumno"
+}
+
+@alumnoToken = {{alumnoLogin.response.body.token}}
+@isAlumno = {{alumnoLogin.response.body.is_alumno}}
+
+### 4. Alumno verifica el código QR para registrar asistencia (SOLO FUNCIONA CON TOKEN DE ALUMNO)
+POST {{baseUrl}}/api/asistencia/codigos-qr/verificar/
+Content-Type: application/json
+Authorization: Token {{alumnoToken}}
+
+{
+    "str_codigo": "{{codigoQR}}",
+    "str_idAlumno": "A001"
+}
+
+### 5. Intento fallido: Alumno intenta generar código QR (DEBE FALLAR)
+POST {{baseUrl}}/api/asistencia/codigos-qr/generar/
+Content-Type: application/json
+Authorization: Token {{alumnoToken}}
+
+{
+    "int_idSesionClase": 1,
+    "str_idDocente": "D001",
+    "formato": "base64"
+}
+
+### 6. Intento fallido: Docente intenta verificar código QR (DEBE FALLAR)
+POST {{baseUrl}}/api/asistencia/codigos-qr/verificar/
+Content-Type: application/json
+Authorization: Token {{docenteToken}}
+
+{
+    "str_codigo": "{{codigoQR}}",
+    "str_idAlumno": "A001"
+}
