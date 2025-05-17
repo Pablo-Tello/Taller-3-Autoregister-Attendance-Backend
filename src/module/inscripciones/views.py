@@ -7,7 +7,8 @@ from .serializers import (
     AlumnoSeccionDetalleSerializer,
     DocenteSeccionSerializer,
     DocenteSeccionDetalleSerializer,
-    DocenteCursoSerializer
+    DocenteCursoSerializer,
+    AlumnoCursoSerializer
 )
 from src.module.usuarios.permissions import IsDocenteOrAlumno
 
@@ -18,6 +19,8 @@ class AlumnoSeccionViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.action == 'retrieve':
             return AlumnoSeccionDetalleSerializer
+        elif self.action == 'cursos_alumno':
+            return AlumnoCursoSerializer
         return AlumnoSeccionSerializer
 
     def get_queryset(self):
@@ -34,6 +37,32 @@ class AlumnoSeccionViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(bool_activo=activo.lower() == 'true')
 
         return queryset
+
+    @action(detail=False, methods=['get'], url_path='cursos-alumno/(?P<alumno_id>[^/.]+)')
+    def cursos_alumno(self, request, alumno_id=None):
+        """
+        Endpoint para obtener los cursos en los que está matriculado un alumno con información detallada.
+        """
+        if not alumno_id:
+            return Response(
+                {"error": "Se requiere el ID del alumno"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Filtrar las inscripciones del alumno
+        queryset = AlumnoSeccion.objects.filter(
+            str_idAlumno=alumno_id,
+            bool_activo=True
+        ).select_related(
+            'int_idSeccion',
+            'int_idSeccion__str_idCurso',
+            'str_idCicloAcademico'
+        )
+
+        # Serializar los resultados
+        serializer = AlumnoCursoSerializer(queryset, many=True)
+
+        return Response(serializer.data)
 
 class DocenteSeccionViewSet(viewsets.ModelViewSet):
     queryset = DocenteSeccion.objects.all()

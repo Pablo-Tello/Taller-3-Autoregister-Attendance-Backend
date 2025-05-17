@@ -2,7 +2,7 @@ from rest_framework import serializers
 from .models import AlumnoSeccion, DocenteSeccion
 from src.module.usuarios.serializers import AlumnoSerializer, DocenteSerializer
 from src.module.academico.serializers import SeccionSerializer
-from src.module.academico.models import Curso, Horario
+from src.module.academico.models import Curso, Horario, Seccion
 
 class AlumnoSeccionSerializer(serializers.ModelSerializer):
     class Meta:
@@ -71,3 +71,26 @@ class DocenteCursoSerializer(serializers.ModelSerializer):
         if horario and horario.str_aula:
             return horario.str_aula
         return "No disponible"
+
+
+class AlumnoCursoSerializer(serializers.ModelSerializer):
+    # Información básica de la sección
+    int_idSeccion = serializers.IntegerField(source='int_idSeccion.int_idSeccion')
+    str_numero = serializers.CharField(source='int_idSeccion.str_numero')
+
+    # Información del curso
+    str_idCurso = serializers.CharField(source='int_idSeccion.str_idCurso.str_idCurso')
+    str_nombreCurso = serializers.CharField(source='int_idSeccion.str_idCurso.str_nombre')
+    int_creditos = serializers.IntegerField(source='int_idSeccion.str_idCurso.int_creditos')
+
+    # Información del ciclo académico
+    str_idCicloAcademico = serializers.CharField(source='str_idCicloAcademico.str_idCicloAcademico')
+    str_nombreCiclo = serializers.CharField(source='str_idCicloAcademico.str_nombre')
+
+    class Meta:
+        model = AlumnoSeccion
+        fields = [
+            'int_idAlumnoSeccion', 'str_idAlumno', 'int_idSeccion',
+            'str_numero', 'str_idCurso', 'str_nombreCurso', 'int_creditos',
+            'str_idCicloAcademico', 'str_nombreCiclo', 'bool_activo'
+        ]

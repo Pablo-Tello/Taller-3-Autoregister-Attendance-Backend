@@ -1,4 +1,6 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from src.module.usuarios.permissions import IsDocenteOrAlumno
@@ -102,6 +104,45 @@ class SesionClaseViewSet(viewsets.ModelViewSet):
     permission_classes = [IsDocenteOrAlumno]
     # pagination_class = None  # Desactivar paginación para este ViewSet
 
+    def get_queryset(self):
+        queryset = SesionClase.objects.all()
+        horario_id = self.request.query_params.get('horario_id', None)
+        ciclo_id = self.request.query_params.get('ciclo_id', None)
+        fecha = self.request.query_params.get('fecha', None)
+        estado = self.request.query_params.get('estado', None)
+
+        if horario_id is not None:
+            queryset = queryset.filter(int_idHorario=horario_id)
+        if ciclo_id is not None:
+            queryset = queryset.filter(str_idCicloAcademico=ciclo_id)
+        if fecha is not None:
+            queryset = queryset.filter(dt_fecha=fecha)
+        if estado is not None:
+            queryset = queryset.filter(str_estado=estado)
+
+        return queryset
+
+    @action(detail=False, methods=['get'], url_path='seccion/(?P<seccion_id>[^/.]+)')
+    def sesiones_por_seccion(self, request, seccion_id=None):
+        """
+        Endpoint para obtener las sesiones de clase de una sección específica.
+        """
+        if not seccion_id:
+            return Response(
+                {"error": "Se requiere el ID de la sección"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Filtrar sesiones por sección
+        queryset = SesionClase.objects.filter(
+            int_idHorario__int_idDocenteSeccion__int_idSeccion=seccion_id
+        )
+
+        # Serializar los resultados
+        serializer = self.get_serializer(queryset, many=True)
+
+        return Response(serializer.data)
+
     @swagger_auto_schema(
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
@@ -122,21 +163,3 @@ class SesionClaseViewSet(viewsets.ModelViewSet):
     )
     def create(self, request, *args, **kwargs):
         return super().create(request, *args, **kwargs)
-
-    def get_queryset(self):
-        queryset = SesionClase.objects.all()
-        horario_id = self.request.query_params.get('horario_id', None)
-        ciclo_id = self.request.query_params.get('ciclo_id', None)
-        fecha = self.request.query_params.get('fecha', None)
-        estado = self.request.query_params.get('estado', None)
-
-        if horario_id is not None:
-            queryset = queryset.filter(horario_id=horario_id)
-        if ciclo_id is not None:
-            queryset = queryset.filter(ciclo_academico_id=ciclo_id)
-        if fecha is not None:
-            queryset = queryset.filter(dt_fecha=fecha)
-        if estado is not None:
-            queryset = queryset.filter(str_estado=estado)
-
-        return queryset

@@ -39,7 +39,7 @@ class AsistenciaViewSet(viewsets.ModelViewSet):
     permission_classes = [IsDocenteOrAlumno]
 
     def get_serializer_class(self):
-        if self.action == 'retrieve':
+        if self.action == 'retrieve' or self.action == 'asistencias_alumno_seccion':
             return AsistenciaDetalleSerializer
         return AsistenciaSerializer
 
@@ -60,6 +60,33 @@ class AsistenciaViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(str_estado=estado)
 
         return queryset
+
+    @action(detail=False, methods=['get'], url_path='alumno-seccion/(?P<alumno_seccion_id>[^/.]+)')
+    def asistencias_alumno_seccion(self, request, alumno_seccion_id=None):
+        """
+        Endpoint para obtener las asistencias de un alumno en una sección específica.
+        """
+        if not alumno_seccion_id:
+            return Response(
+                {"error": "Se requiere el ID de la inscripción del alumno"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Filtrar las asistencias por el ID de AlumnoSeccion
+        queryset = Asistencia.objects.filter(
+            int_idAlumnoSeccion=alumno_seccion_id,
+            bool_activo=True
+        ).select_related(
+            'int_idSesionClase',
+            'int_idAlumnoSeccion',
+            'int_idAlumnoSeccion__int_idSeccion',
+            'int_idAlumnoSeccion__int_idSeccion__str_idCurso'
+        )
+
+        # Serializar los resultados
+        serializer = self.get_serializer(queryset, many=True)
+
+        return Response(serializer.data)
 
 
 class CodigoQRViewSet(viewsets.ModelViewSet):
