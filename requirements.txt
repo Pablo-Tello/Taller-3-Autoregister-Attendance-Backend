@@ -1,11 +1,13 @@
+bcrypt
+coreapi
 Django
+django-cors-headers
 djangorestframework
 mysqlclient
 python-dotenv
-coreapi
 PyYAML
 drf-yasg
 qrcode
 pillow
+PyJWT
 pyngrok
-django-cors-headers

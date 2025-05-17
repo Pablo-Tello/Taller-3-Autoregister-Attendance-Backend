@@ -14,8 +14,10 @@ from .serializers import (
     DocenteCreateSerializer,
     AlumnoSerializer,
     AlumnoCreateSerializer,
-    LoginSerializer
+    LoginSerializer,
+    RefreshTokenSerializer
 )
+from src.utils.jwt_utils import generate_access_token, generate_refresh_token
 
 User = get_user_model()
 
@@ -35,7 +37,8 @@ User = get_user_model()
             schema=openapi.Schema(
                 type=openapi.TYPE_OBJECT,
                 properties={
-                    'token': openapi.Schema(type=openapi.TYPE_STRING, description='Token de autenticación'),
+                    'access_token': openapi.Schema(type=openapi.TYPE_STRING, description='Token JWT de acceso'),
+                    'refresh_token': openapi.Schema(type=openapi.TYPE_STRING, description='Token JWT de refresco'),
                     'user_id': openapi.Schema(type=openapi.TYPE_INTEGER, description='ID del usuario'),
                     'email': openapi.Schema(type=openapi.TYPE_STRING, format='email', description='Email del usuario'),
                     'is_docente': openapi.Schema(type=openapi.TYPE_BOOLEAN, description='Indica si el usuario es un docente'),
@@ -47,7 +50,7 @@ User = get_user_model()
         ),
         400: 'Credenciales inválidas',
     },
-    operation_description='Endpoint para iniciar sesión y obtener un token de autenticación',
+    operation_description='Endpoint para iniciar sesión y obtener tokens JWT de acceso y refresco',
     operation_summary='Login',
     tags=['Autenticación'],
 )
@@ -57,11 +60,15 @@ def login_view(request):
     serializer = LoginSerializer(data=request.data)
     if serializer.is_valid():
         user = serializer.validated_data['user']
-        token, created = Token.objects.get_or_create(user=user)
+
+        # Generar tokens JWT
+        access_token = generate_access_token(user)
+        refresh_token = generate_refresh_token(user)
 
         # Preparar la respuesta básica
         response_data = {
-            'token': token.key,
+            'access_token': access_token,
+            'refresh_token': refresh_token,
             'user_id': user.int_idUser,
             'email': user.str_email,
             'is_docente': hasattr(user, 'docente'),
@@ -135,14 +142,48 @@ class AlumnoViewSet(viewsets.ModelViewSet):
         ),
         401: 'No autenticado',
     },
-    operation_description='Endpoint para cerrar sesión y eliminar el token de autenticación',
+    operation_description='Endpoint para cerrar sesión',
     operation_summary='Logout',
     tags=['Autenticación'],
 )
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def logout_view(request):
-    # Eliminar el token del usuario
-    if hasattr(request.user, 'auth_token'):
-        request.user.auth_token.delete()
+    # En JWT no es necesario eliminar tokens del servidor, ya que son stateless
+    # El frontend debe eliminar los tokens almacenados
     return Response({'detail': 'Sesión cerrada exitosamente'}, status=status.HTTP_200_OK)
+
+
+@swagger_auto_schema(
+    method='post',
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        required=['refresh_token'],
+        properties={
+            'refresh_token': openapi.Schema(type=openapi.TYPE_STRING, description='Token JWT de refresco'),
+        },
+    ),
+    responses={
+        200: openapi.Response(
+            description='Token refrescado exitosamente',
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'access_token': openapi.Schema(type=openapi.TYPE_STRING, description='Nuevo token JWT de acceso'),
+                },
+            ),
+        ),
+        400: 'Token de refresco inválido o expirado',
+    },
+    operation_description='Endpoint para refrescar el token JWT de acceso usando un token de refresco',
+    operation_summary='Refresh Token',
+    tags=['Autenticación'],
+)
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def refresh_token_view(request):
+    serializer = RefreshTokenSerializer(data=request.data)
+    if serializer.is_valid():
+        access_token = serializer.validated_data['access_token']
+        return Response({'access_token': access_token})
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

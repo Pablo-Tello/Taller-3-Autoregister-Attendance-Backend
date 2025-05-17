@@ -67,7 +67,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',  # CORS middleware - add this before CommonMiddleware
-    'src.middleware.CorsMiddleware',  # Nuestro middleware personalizado para CORS
+    'src.utils.middleware.CorsMiddleware',  # Nuestro middleware personalizado para CORS
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -160,6 +160,7 @@ AUTH_USER_MODEL = 'usuarios.User'
 # Django REST Framework settings
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
+        'src.utils.jwt_authentication.JWTAuthentication',
         'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication',
@@ -170,6 +171,13 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
 }
+
+# JWT settings
+JWT_SECRET_KEY = SECRET_KEY
+JWT_REFRESH_SECRET_KEY = f"{SECRET_KEY}_refresh"
+JWT_ALGORITHM = 'HS256'
+JWT_ACCESS_TOKEN_LIFETIME = 30  # minutes
+JWT_REFRESH_TOKEN_LIFETIME = 7  # days
 
 # CORS settings
 CORS_ALLOW_ALL_ORIGINS = True  # Temporalmente permitir todos los orígenes para depuración

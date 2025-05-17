@@ -2,6 +2,8 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model, authenticate
 from rest_framework.authtoken.models import Token
 from .models import Docente, Alumno
+from src.utils.jwt_utils import generate_access_token, generate_refresh_token, decode_refresh_token
+import jwt
 
 User = get_user_model()
 
@@ -137,3 +139,39 @@ class AlumnoCreateSerializer(serializers.ModelSerializer):
 
         alumno = Alumno.objects.create(str_idAlumno=new_id, int_idUser=user, **validated_data)
         return alumno
+
+
+class RefreshTokenSerializer(serializers.Serializer):
+    refresh_token = serializers.CharField(required=True)
+
+    def validate(self, data):
+        refresh_token = data.get('refresh_token')
+
+        try:
+            # Decodificar el token de refresco
+            payload = decode_refresh_token(refresh_token)
+            user_id = payload['user_id']
+
+            # Obtener el usuario
+            try:
+                user = User.objects.get(int_idUser=user_id)
+            except User.DoesNotExist:
+                raise serializers.ValidationError("Usuario no encontrado")
+
+            if not user.is_active:
+                raise serializers.ValidationError("Usuario inactivo")
+
+            # Generar un nuevo token de acceso
+            access_token = generate_access_token(user)
+
+            return {
+                'user': user,
+                'access_token': access_token
+            }
+
+        except jwt.ExpiredSignatureError:
+            raise serializers.ValidationError("Token de refresco expirado")
+        except jwt.InvalidTokenError:
+            raise serializers.ValidationError("Token de refresco inválido")
+        except Exception as e:
+            raise serializers.ValidationError(f"Error al validar el token: {str(e)}")
