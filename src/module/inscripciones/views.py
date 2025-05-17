@@ -1,10 +1,13 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
 from .models import AlumnoSeccion, DocenteSeccion
 from .serializers import (
     AlumnoSeccionSerializer,
     AlumnoSeccionDetalleSerializer,
     DocenteSeccionSerializer,
-    DocenteSeccionDetalleSerializer
+    DocenteSeccionDetalleSerializer,
+    DocenteCursoSerializer
 )
 from src.module.usuarios.permissions import IsDocenteOrAlumno
 
@@ -39,6 +42,8 @@ class DocenteSeccionViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.action == 'retrieve':
             return DocenteSeccionDetalleSerializer
+        elif self.action == 'cursos_docente':
+            return DocenteCursoSerializer
         return DocenteSeccionSerializer
 
     def get_queryset(self):
@@ -58,3 +63,29 @@ class DocenteSeccionViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(bool_activo=activo.lower() == 'true')
 
         return queryset
+
+    @action(detail=False, methods=['get'], url_path='cursos-docente/(?P<docente_id>[^/.]+)')
+    def cursos_docente(self, request, docente_id=None):
+        """
+        Endpoint para obtener los cursos asignados a un docente con información detallada.
+        """
+        if not docente_id:
+            return Response(
+                {"error": "Se requiere el ID del docente"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Filtrar las asignaciones del docente
+        queryset = DocenteSeccion.objects.filter(
+            str_idDocente=docente_id,
+            bool_activo=True
+        ).select_related(
+            'int_idSeccion',
+            'int_idSeccion__str_idCurso',
+            'str_idCicloAcademico'
+        )
+
+        # Serializar los resultados
+        serializer = DocenteCursoSerializer(queryset, many=True)
+
+        return Response(serializer.data)
