@@ -13,6 +13,8 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 from src.module.usuarios.permissions import IsDocente, IsAlumno, IsDocenteOrAlumno
 from src.utils.jwt_utils import generate_qr_token, decode_qr_token
 
@@ -231,6 +233,30 @@ class CodigoQRViewSet(viewsets.ModelViewSet):
             if sesion_clase.str_estado == 'P':  # Pendiente
                 sesion_clase.str_estado = 'R'  # Realizada
                 sesion_clase.save()
+
+        # Enviar notificación por WebSocket
+        try:
+            channel_layer = get_channel_layer()
+            room_group_name = f'qr_session_{sesion_clase.int_idSesionClase}'
+
+            # Obtener el nombre completo del alumno
+            student_name = f"{alumno.str_nombres} {alumno.str_apellidos}"
+
+            # Enviar mensaje al grupo de WebSocket
+            async_to_sync(channel_layer.group_send)(
+                room_group_name,
+                {
+                    'type': 'qr_verified',
+                    'session_id': sesion_clase.int_idSesionClase,
+                    'student_id': str_idAlumno,
+                    'student_name': student_name,
+                    'attendance_id': asistencia.int_idAsistencia,
+                    'timestamp': timezone.now().isoformat()
+                }
+            )
+        except Exception as e:
+            # Log the error but don't fail the request
+            print(f"Error sending WebSocket notification: {e}")
 
         # Devolver la asistencia creada/actualizada
         return Response(AsistenciaSerializer(asistencia).data, status=status.HTTP_200_OK)
@@ -507,6 +533,30 @@ class CodigoQRViewSet(viewsets.ModelViewSet):
             if sesion_clase.str_estado == 'P':  # Pendiente
                 sesion_clase.str_estado = 'R'  # Realizada
                 sesion_clase.save()
+
+        # Enviar notificación por WebSocket
+        try:
+            channel_layer = get_channel_layer()
+            room_group_name = f'qr_session_{int_idSesionClase}'
+
+            # Obtener el nombre completo del alumno
+            student_name = f"{alumno.str_nombres} {alumno.str_apellidos}"
+
+            # Enviar mensaje al grupo de WebSocket
+            async_to_sync(channel_layer.group_send)(
+                room_group_name,
+                {
+                    'type': 'qr_verified',
+                    'session_id': int_idSesionClase,
+                    'student_id': str_idAlumno,
+                    'student_name': student_name,
+                    'attendance_id': asistencia.int_idAsistencia,
+                    'timestamp': timezone.now().isoformat()
+                }
+            )
+        except Exception as e:
+            # Log the error but don't fail the request
+            print(f"Error sending WebSocket notification: {e}")
 
         # Devolver la asistencia creada/actualizada
         return Response(AsistenciaSerializer(asistencia).data, status=status.HTTP_200_OK)

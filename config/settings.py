@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     # 'django.contrib.sessions',
     'django.contrib.messages',
+    'daphne',
     'django.contrib.staticfiles',
 
     # Third party apps
@@ -53,6 +54,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'drf_yasg',
     'corsheaders',
+    'channels',
     # 'coreschema',
     # 'coreapi',
 
@@ -61,6 +63,7 @@ INSTALLED_APPS = [
     'src.module.usuarios.apps.UsuariosConfig',
     'src.module.inscripciones.apps.InscripcionesConfig',
     'src.module.asistencia.apps.AsistenciaConfig',
+    'src.module.websocket.apps.WebsocketConfig',
 ]
 
 MIDDLEWARE = [
@@ -246,4 +249,12 @@ SWAGGER_SETTINGS = {
         'delete',
         'patch'
     ],
+}
+
+# Channels settings
+ASGI_APPLICATION = 'config.asgi.application'
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
 }

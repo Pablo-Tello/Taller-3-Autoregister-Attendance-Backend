@@ -1,5 +1,7 @@
 bcrypt
+channels
 coreapi
+daphne
 Django
 django-cors-headers
 djangorestframework
