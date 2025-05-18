@@ -42,3 +42,8 @@ class CodigoQRDetalleSerializer(serializers.ModelSerializer):
 class VerificarCodigoQRSerializer(serializers.Serializer):
     str_codigo = serializers.CharField(max_length=255)
     str_idAlumno = serializers.CharField(max_length=20)
+
+
+class VerificarCodigoQRJWTSerializer(serializers.Serializer):
+    token = serializers.CharField()
+    str_idAlumno = serializers.CharField(max_length=20)

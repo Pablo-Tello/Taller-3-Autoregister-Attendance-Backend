@@ -1,5 +1,6 @@
 import uuid
 import base64
+import jwt
 from io import BytesIO
 
 from django.utils import timezone
@@ -13,6 +14,7 @@ from rest_framework.permissions import IsAuthenticated
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from src.module.usuarios.permissions import IsDocente, IsAlumno, IsDocenteOrAlumno
+from src.utils.jwt_utils import generate_qr_token, decode_qr_token
 
 try:
     import qrcode
@@ -31,7 +33,8 @@ from .serializers import (
     CodigoQRSerializer,
     CodigoQRCreateSerializer,
     CodigoQRDetalleSerializer,
-    VerificarCodigoQRSerializer
+    VerificarCodigoQRSerializer,
+    VerificarCodigoQRJWTSerializer
 )
 
 class AsistenciaViewSet(viewsets.ModelViewSet):
@@ -94,9 +97,9 @@ class CodigoQRViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_permissions(self):
-        if self.action == 'generar' or self.action == 'create':
+        if self.action == 'generar' or self.action == 'create' or self.action == 'generar_jwt':
             self.permission_classes = [IsDocente]
-        elif self.action == 'verificar':
+        elif self.action == 'verificar' or self.action == 'verificar_jwt':
             self.permission_classes = [IsAlumno]
         return super().get_permissions()
 
@@ -333,3 +336,177 @@ class CodigoQRViewSet(viewsets.ModelViewSet):
                 'qr_code': f'data:image/png;base64,{img_str}',
                 'expiracion': dt_fecha_expiracion.isoformat() if dt_fecha_expiracion else None,
             }, status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(
+        method='post',
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['int_idSesionClase', 'str_idDocente'],
+            properties={
+                'int_idSesionClase': openapi.Schema(type=openapi.TYPE_INTEGER, description='ID de la sesión de clase'),
+                'str_idDocente': openapi.Schema(type=openapi.TYPE_STRING, description='ID del docente'),
+                'formato': openapi.Schema(type=openapi.TYPE_STRING, enum=['base64', 'png'], description='Formato de retorno del código QR'),
+            },
+        ),
+        responses={
+            200: openapi.Response('Código QR JWT generado exitosamente',
+                                openapi.Schema(type=openapi.TYPE_OBJECT,
+                                            properties={
+                                                'qr_code': openapi.Schema(type=openapi.TYPE_STRING),
+                                                'expiracion': openapi.Schema(type=openapi.TYPE_STRING, format='date-time'),
+                                            })),
+            400: 'Datos inválidos o biblioteca qrcode no disponible',
+        },
+        operation_description='Genera un nuevo código QR con JWT para una sesión de clase con validez de 30 segundos',
+        operation_summary='Generar código QR con JWT',
+    )
+    @action(detail=False, methods=['post'], url_path='generar-jwt')
+    def generar_jwt(self, request):
+        # Verificar si la biblioteca qrcode está disponible
+        if not QRCODE_AVAILABLE:
+            return Response(
+                {'error': 'La biblioteca qrcode no está instalada en el servidor'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Validar datos de entrada
+        int_idSesionClase = request.data.get('int_idSesionClase')
+        str_idDocente = request.data.get('str_idDocente')
+        formato = request.data.get('formato', 'base64')  # Por defecto, devolver como base64
+
+        if not int_idSesionClase or not str_idDocente:
+            return Response(
+                {'error': 'Se requieren los campos int_idSesionClase y str_idDocente'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Verificar que la sesión de clase y el docente existan
+        try:
+            sesion_clase = SesionClase.objects.get(int_idSesionClase=int_idSesionClase)
+            docente = Docente.objects.get(str_idDocente=str_idDocente)
+        except (SesionClase.DoesNotExist, Docente.DoesNotExist):
+            return Response(
+                {'error': 'Sesión de clase o docente no encontrados'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Generar el token JWT con la información necesaria
+        token, expiration_time = generate_qr_token(int_idSesionClase, str_idDocente)
+
+        # Generar la imagen del código QR con el token JWT
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(token)
+        qr.make(fit=True)
+
+        img = qr.make_image(fill_color="black", back_color="white")
+        buffer = BytesIO()
+        img.save(buffer, format="PNG")
+        buffer.seek(0)
+
+        # Devolver la respuesta según el formato solicitado
+        if formato == 'png':
+            return HttpResponse(buffer.getvalue(), content_type="image/png")
+        else:  # base64
+            img_str = base64.b64encode(buffer.getvalue()).decode('utf-8')
+            return Response({
+                'qr_code': f'data:image/png;base64,{img_str}',
+                'expiracion': expiration_time.isoformat(),
+            }, status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(
+        method='post',
+        request_body=VerificarCodigoQRJWTSerializer,
+        responses={
+            200: openapi.Response('Asistencia registrada exitosamente', AsistenciaSerializer),
+            400: 'Datos inválidos o código QR expirado',
+            404: 'Código QR no encontrado',
+        },
+        operation_description='Verifica un código QR JWT y registra la asistencia del alumno',
+        operation_summary='Verificar código QR JWT y registrar asistencia',
+    )
+    @action(detail=False, methods=['post'], url_path='verificar-jwt')
+    def verificar_jwt(self, request):
+        serializer = VerificarCodigoQRJWTSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        token = serializer.validated_data['token']
+        str_idAlumno = serializer.validated_data['str_idAlumno']
+
+        # Decodificar y validar el token JWT
+        try:
+            payload = decode_qr_token(token)
+        except jwt.ExpiredSignatureError:
+            return Response({'error': 'Código QR expirado'}, status=status.HTTP_400_BAD_REQUEST)
+        except jwt.InvalidTokenError:
+            return Response({'error': 'Código QR inválido'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Extraer la información del token
+        int_idSesionClase = payload.get('sesion_clase_id')
+        str_idDocente = payload.get('docente_id')
+
+        if not int_idSesionClase or not str_idDocente:
+            return Response({'error': 'Token JWT malformado'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Obtener la sesión de clase
+        try:
+            sesion_clase = SesionClase.objects.get(int_idSesionClase=int_idSesionClase)
+        except SesionClase.DoesNotExist:
+            return Response({'error': 'Sesión de clase no encontrada'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Buscar al alumno
+        try:
+            alumno = Alumno.objects.get(str_idAlumno=str_idAlumno)
+        except Alumno.DoesNotExist:
+            return Response({'error': 'Alumno no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Buscar la inscripción del alumno en la sección
+        try:
+            seccion = sesion_clase.int_idHorario.int_idDocenteSeccion.int_idSeccion
+            alumno_seccion = AlumnoSeccion.objects.get(
+                str_idAlumno=alumno,
+                int_idSeccion=seccion,
+                bool_activo=True
+            )
+        except AlumnoSeccion.DoesNotExist:
+            return Response(
+                {'error': 'El alumno no está inscrito en esta sección'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Verificar si ya existe una asistencia para este alumno en esta sesión
+        asistencia_existente = Asistencia.objects.filter(
+            int_idSesionClase=sesion_clase,
+            int_idAlumnoSeccion=alumno_seccion,
+            str_tipo='A'
+        ).first()
+
+        with transaction.atomic():
+            if asistencia_existente:
+                # Actualizar la asistencia existente
+                asistencia_existente.str_estado = 'P'  # Presente
+                asistencia_existente.dt_hora_registro = timezone.now().time()
+                asistencia_existente.save()
+                asistencia = asistencia_existente
+            else:
+                # Crear una nueva asistencia
+                asistencia = Asistencia.objects.create(
+                    int_idSesionClase=sesion_clase,
+                    int_idAlumnoSeccion=alumno_seccion,
+                    str_tipo='A',  # Alumno
+                    dt_fecha=timezone.now().date(),
+                    str_estado='P',  # Presente
+                )
+
+            # Actualizar el estado de la sesión de clase si aún no está marcada como realizada
+            if sesion_clase.str_estado == 'P':  # Pendiente
+                sesion_clase.str_estado = 'R'  # Realizada
+                sesion_clase.save()
+
+        # Devolver la asistencia creada/actualizada
+        return Response(AsistenciaSerializer(asistencia).data, status=status.HTTP_200_OK)

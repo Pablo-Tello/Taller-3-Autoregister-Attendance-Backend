@@ -639,3 +639,59 @@ Para los response de endpoints de GET devuelve dentro del atributo results:
     "dt_fecha_registro": "2025-03-15T08:30:00Z"
   }
   ```
+
+### Generate JWT QR Code
+
+- **URL**: `/api/asistencia/codigos-qr/generar-jwt/`
+- **Method**: `POST`
+- **Permission**: Docente only
+- **Request**:
+  - **Headers**:
+    ```
+    Authorization: Token your_token
+    Content-Type: application/json
+    ```
+  - **Body**:
+    ```json
+    {
+      "int_idSesionClase": 1,
+      "str_idDocente": "D001",
+      "formato": "base64"
+    }
+    ```
+- **Response**:
+  ```json
+  {
+    "qr_code": "data:image/png;base64,base64_encoded_image",
+    "expiracion": "2025-03-15T08:00:30Z"
+  }
+  ```
+
+### Verify JWT QR Code
+
+- **URL**: `/api/asistencia/codigos-qr/verificar-jwt/`
+- **Method**: `POST`
+- **Permission**: Alumno only
+- **Request**:
+  - **Headers**:
+    ```
+    Authorization: Token your_token
+    Content-Type: application/json
+    ```
+  - **Body**:
+    ```json
+    {
+      "token": "jwt_token_from_qr_code",
+      "str_idAlumno": "A001"
+    }
+    ```
+- **Response**:
+  ```json
+  {
+    "int_idAsistencia": 1,
+    "int_idAlumnoSeccion": 1,
+    "int_idSesionClase": 1,
+    "bool_asistio": true,
+    "dt_fecha_registro": "2025-03-15T08:30:00Z"
+  }
+  ```

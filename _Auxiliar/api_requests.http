@@ -201,6 +201,29 @@ Authorization: Token {{alumnoToken}}
     "str_idAlumno": "A001"
 }
 
+### Generar un nuevo código QR con JWT (SOLO PARA DOCENTES)
+# Esta solicitud fallará si se usa un token de alumno
+POST {{baseUrl}}/api/asistencia/codigos-qr/generar-jwt/
+Content-Type: application/json
+Authorization: Token {{docenteToken}}
+
+{
+    "int_idSesionClase": 1,
+    "str_idDocente": "D001",
+    "formato": "base64"
+}
+
+### Verificar un código QR JWT y registrar asistencia (SOLO PARA ALUMNOS)
+# Esta solicitud fallará si se usa un token de docente
+POST {{baseUrl}}/api/asistencia/codigos-qr/verificar-jwt/
+Content-Type: application/json
+Authorization: Token {{alumnoToken}}
+
+{
+    "token": "jwt-token-from-qr-code",
+    "str_idAlumno": "A001"
+}
+
 ###############################################################################
 # EJEMPLOS DE FLUJO COMPLETO CON AUTENTICACIÓN POR ROL
 ###############################################################################
@@ -273,5 +296,59 @@ Authorization: Token {{docenteToken}}
 
 {
     "str_codigo": "{{codigoQR}}",
+    "str_idAlumno": "A001"
+}
+
+###############################################################################
+# EJEMPLOS DE FLUJO COMPLETO CON JWT QR CODE
+###############################################################################
+
+### 1. Docente inicia sesión
+# @name docenteLoginJWT
+POST {{baseUrl}}/api/usuarios/login/
+Content-Type: application/json
+
+{
+    "str_email": "docente@ejemplo.com",
+    "password": "contraseña_docente"
+}
+
+@docenteTokenJWT = {{docenteLoginJWT.response.body.token}}
+
+### 2. Docente genera código QR JWT para una sesión (SOLO FUNCIONA CON TOKEN DE DOCENTE)
+# @name generarQRJWT
+POST {{baseUrl}}/api/asistencia/codigos-qr/generar-jwt/
+Content-Type: application/json
+Authorization: Token {{docenteTokenJWT}}
+
+{
+    "int_idSesionClase": 1,
+    "str_idDocente": "D001",
+    "formato": "base64"
+}
+
+# Nota: El token JWT está codificado en el QR, no se puede extraer directamente de la respuesta
+# En una aplicación real, el alumno escanearía el código QR para obtener el token
+
+### 3. Alumno inicia sesión
+# @name alumnoLoginJWT
+POST {{baseUrl}}/api/usuarios/login/
+Content-Type: application/json
+
+{
+    "str_email": "alumno@ejemplo.com",
+    "password": "contraseña_alumno"
+}
+
+@alumnoTokenJWT = {{alumnoLoginJWT.response.body.token}}
+
+### 4. Alumno verifica el código QR JWT para registrar asistencia (SOLO FUNCIONA CON TOKEN DE ALUMNO)
+# Nota: En un caso real, el token se obtendría al escanear el código QR
+POST {{baseUrl}}/api/asistencia/codigos-qr/verificar-jwt/
+Content-Type: application/json
+Authorization: Token {{alumnoTokenJWT}}
+
+{
+    "token": "token-jwt-del-qr-escaneado",
     "str_idAlumno": "A001"
 }
