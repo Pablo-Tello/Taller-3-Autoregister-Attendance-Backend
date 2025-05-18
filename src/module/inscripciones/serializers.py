@@ -5,9 +5,22 @@ from src.module.academico.serializers import SeccionSerializer
 from src.module.academico.models import Curso, Horario, Seccion
 
 class AlumnoSeccionSerializer(serializers.ModelSerializer):
+    # Add nested serialization for str_idAlumno to include student name and surname
+    str_idAlumno = serializers.SerializerMethodField()
+
     class Meta:
         model = AlumnoSeccion
         fields = '__all__'
+
+    def get_str_idAlumno(self, obj):
+        # Return a dictionary with the student ID, name and surname
+        if obj.str_idAlumno:
+            return {
+                'str_idAlumno': obj.str_idAlumno.str_idAlumno,
+                'str_nombres': obj.str_idAlumno.str_nombres,
+                'str_apellidos': obj.str_idAlumno.str_apellidos
+            }
+        return obj.str_idAlumno
 
 class AlumnoSeccionDetalleSerializer(serializers.ModelSerializer):
     str_idAlumno = AlumnoSerializer(read_only=True)
